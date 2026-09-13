@@ -190,7 +190,6 @@
 
     <!-- ========================================== -->
     <!-- SCREEN 3: APP SCREEN (DASHBOARD ADMIN) -->
-    <!-- (Bagian Dashboard, Tabel Absensi, dan Laporan tidak dirubah, disembunyikan untuk menghemat spasi di snippet, SAMA seperti sebelumnya) -->
     <!-- ========================================== -->
     <div id="app-screen" class="hidden h-screen flex w-full">
         <!-- Sidebar Overlay (Mobile) -->
@@ -440,13 +439,29 @@
             setTimeout(()=> { t.classList.replace('translate-x-0','translate-x-[150%]'); t.classList.replace('opacity-100','opacity-0'); }, 3500);
         }
 
+        // Perbaikan: Penanganan error yang lebih robust saat fetch ke Apps Script
         async function api(action, data={}) {
             try {
-                const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({action, data}) });
-                const json = await res.json();
-                if(!json.success) throw new Error(json.message);
-                return json.data;
-            } catch(e) { showToast(e.message || "Gagal terhubung ke server", false); return null; }
+                const res = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                    body: JSON.stringify({action, data}) 
+                });
+                if (!res.ok) throw new Error("Gagal terhubung ke server (Network Error)");
+                
+                const textRes = await res.text();
+                // Validasi JSON manual untuk antisipasi response HTML (biasanya dari error GAS/Login)
+                try {
+                    const json = JSON.parse(textRes);
+                    if(!json.success) throw new Error(json.message || "Terjadi kesalahan di server");
+                    return json.data;
+                } catch (jsonErr) {
+                    throw new Error("Server tidak mengembalikan format data yang valid.");
+                }
+            } catch(e) { 
+                showToast(e.message || "Gagal terhubung ke server", false); 
+                return null; 
+            }
         }
 
         // --- NAVIGATION & AUTH ---
@@ -526,7 +541,6 @@
             if(!nis) return showToast("Silakan pilih nama Anda!", false);
             if(pass.toLowerCase() !== 'bismillah') return showToast("Kata sandi salah! Masukkan: bismillah", false);
 
-            // Jika benar, sembunyikan Step 1, tampilkan Step 2
             const namaSiswa = selNama.options[selNama.selectedIndex].text;
             document.getElementById('display-nama-siswa').innerText = namaSiswa;
             
@@ -535,12 +549,12 @@
         }
 
         function kembaliKeStep1() {
-            // Kembali ke tampilan auth, tapi reset kamera dan lokasi
             document.getElementById('step-2-absen').classList.add('hidden');
             document.getElementById('step-1-auth').classList.remove('hidden');
             
             document.getElementById('mandiri-pass').value = '';
-            document.getElementById('mandiri-kamera').value = '';
+            // Pastikan value file input benar-benar di-reset
+            document.getElementById('mandiri-kamera').value = ''; 
             document.getElementById('mandiri-preview').classList.add('hidden');
             
             base64Img = null; 
@@ -590,15 +604,22 @@
                     pos => {
                         usrLat = pos.coords.latitude; usrLng = pos.coords.longitude;
                         const jrk = Math.round(hitungJarak(SCH_LAT, SCH_LNG, usrLat, usrLng));
-                        if(jrk <= MAX_RADIUS) { stat.innerText = `Sesuai Area (${jrk}m)`; stat.className="text-sm font-bold text-green-600"; }
-                        else { stat.innerText = `Terlalu Jauh (${jrk}m)`; stat.className="text-sm font-bold text-red-600"; alert("Anda berada di luar radius sekolah!"); }
+                        if(jrk <= MAX_RADIUS) { 
+                            stat.innerText = `Sesuai Area (${jrk}m)`; 
+                            stat.className="text-sm font-bold text-green-600"; 
+                        }
+                        else { 
+                            stat.innerText = `Terlalu Jauh (${jrk}m)`; 
+                            stat.className="text-sm font-bold text-red-600"; 
+                            alert("Anda berada di luar radius sekolah!"); 
+                        }
                     },
                     err => { 
                         stat.innerText = "GPS Ditolak/Error!"; 
                         stat.className="text-sm font-bold text-red-600"; 
                         alert("Mohon izinkan akses lokasi (GPS) pada browser Anda!"); 
                     },
-                    {enableHighAccuracy: true}
+                    {enableHighAccuracy: true, timeout: 10000, maximumAge: 0}
                 );
             } else alert("Browser tidak mendukung GPS.");
         }
@@ -615,32 +636,22 @@
 
             toggleLoad(true);
             try {
-                const json = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ 
-                        action: 'absenMandiri', 
-                        data: { jenis: jenisDipilih, nis: nis, base64Foto: base64Img, lat: usrLat, lng: usrLng } 
-                    })
-                }).then(r => r.json());
-                
+                // Gunakan fungsi api() yang sudah diperbaiki agar seragam
+                const resultData = await api('absenMandiri', { 
+                    jenis: jenisDipilih, nis: nis, base64Foto: base64Img, lat: usrLat, lng: usrLng 
+                });
                 toggleLoad(false);
                 
-                if(json.success) {
-                    showToast(json.message);
-                    
-                    // Reset semuanya dan kembali ke Step 1
+                if(resultData !== null) {
+                    showToast("Absensi berhasil dikirim!");
                     document.getElementById('form-absen-mandiri').reset();
                     document.getElementById('mandiri-nama').disabled = true;
                     document.getElementById('mandiri-nama').innerHTML = '<option value="">-- Pilih kelas terlebih dahulu --</option>';
                     kembaliKeStep1();
-                    
-                } else {
-                    showToast(json.message, false);
                 }
             } catch(err) {
                 toggleLoad(false);
-                showToast("Gagal terhubung ke server.", false);
+                showToast("Gagal memproses absensi.", false);
             }
         });
 
