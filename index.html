@@ -29,7 +29,7 @@
             .print-container { width: 100%; border-collapse: collapse; margin-top: 20px; }
             .print-container th, .print-container td { border: 1px solid #334155; padding: 10px; font-size: 12pt; }
             .print-container th { background-color: #f1f5f9 !important; font-weight: bold; }
-            .print-container tr { page-break-inside: avoid; } /* Mencegah baris terpotong antar halaman */
+            .print-container tr { page-break-inside: avoid; }
             .print-header { display: flex; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 15px; margin-bottom: 20px; }
             .print-header img { height: 80px; width: auto; object-fit: contain; margin-right: 20px; }
             .print-header-text h2 { margin: 0; font-size: 18pt; font-weight: bold; color: #0f172a; text-transform: uppercase; }
@@ -41,13 +41,11 @@
 <body class="text-slate-800 antialiased overflow-hidden">
 
     <!-- GLOBAL COMPONENTS -->
-    <!-- Toast Notification -->
     <div id="toast" class="fixed top-5 right-5 transform transition-all duration-300 translate-x-[150%] opacity-0 px-5 py-3 rounded-xl shadow-2xl z-[100] text-white font-medium flex items-center gap-3">
         <i id="toast-icon" class="fa fa-info-circle text-lg"></i>
         <span id="toast-msg">Pesan</span>
     </div>
 
-    <!-- Loading Overlay -->
     <div id="loading" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[90] hidden transition-opacity">
         <div class="animate-spin rounded-full h-14 w-14 border-4 border-white/20 border-t-blue-500 mb-4 shadow-lg"></div>
         <p class="text-white font-medium tracking-wide">Memproses data...</p>
@@ -69,66 +67,86 @@
                 <p class="text-slate-500 text-sm mt-1">SMK Riyadlul Huda</p>
             </div>
             
-            <form id="form-absen-mandiri" class="space-y-5">
-                <!-- Jenis Absen -->
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Jenis Absen</label>
-                    <div class="flex gap-3">
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="jenis_absen" value="datang" class="peer sr-only" checked>
-                            <div class="text-center py-2.5 rounded-xl border border-slate-200 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 font-semibold transition shadow-sm text-sm">Masuk / Datang</div>
-                        </label>
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="jenis_absen" value="pulang" class="peer sr-only">
-                            <div class="text-center py-2.5 rounded-xl border border-slate-200 peer-checked:bg-rose-600 peer-checked:text-white peer-checked:border-rose-600 font-semibold transition shadow-sm text-sm">Pulang</div>
-                        </label>
+            <form id="form-absen-mandiri">
+                <!-- ================= TAHAP 1: LOGIN SISWA ================= -->
+                <div id="step-1-auth" class="space-y-5">
+                    <!-- Kelas & Nama -->
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-kelas">Pilih Kelas</label>
+                            <select id="mandiri-kelas" onchange="filterSiswaMandiri()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer" required>
+                                <option value="">-- Memuat kelas... --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-nama">Nama Lengkap</label>
+                            <select id="mandiri-nama" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer" disabled required>
+                                <option value="">-- Pilih kelas terlebih dahulu --</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Kelas & Nama -->
-                <div class="grid grid-cols-1 gap-4">
+                    <!-- Password -->
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-kelas">Pilih Kelas</label>
-                        <select id="mandiri-kelas" onchange="filterSiswaMandiri()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer" required>
-                            <option value="">-- Memuat kelas... --</option>
-                        </select>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-pass">Kata Sandi Absen</label>
+                        <input type="password" id="mandiri-pass" placeholder="Ketik: bismillah" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-nama">Nama Lengkap</label>
-                        <select id="mandiri-nama" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer" disabled required>
-                            <option value="">-- Pilih kelas terlebih dahulu --</option>
-                        </select>
-                    </div>
-                </div>
 
-                <!-- Password -->
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-pass">Kata Sandi Absen</label>
-                    <input type="password" id="mandiri-pass" placeholder="Ketik: bismillah" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
-                    <p class="text-[11px] text-slate-500 mt-1 font-medium"><i class="fa fa-info-circle text-blue-500"></i> Masukkan kata sandi <b>bismillah</b> untuk semua siswa.</p>
-                </div>
-
-                <!-- Kamera -->
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-kamera">Foto Selfie (Bukti Kehadiran)</label>
-                    <input type="file" id="mandiri-kamera" accept="image/*" capture="user" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100 transition-all cursor-pointer" required>
-                    <img id="mandiri-preview" class="hidden mt-3 w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm" alt="Preview Foto">
-                </div>
-
-                <!-- Lokasi GPS -->
-                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
-                    <div>
-                        <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Status Lokasi</p>
-                        <p id="mandiri-gps-status" class="text-sm font-bold text-amber-600">Belum diizinkan</p>
-                    </div>
-                    <button type="button" onclick="cekLokasiMandiri()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">
-                        <i class="fa fa-map-marker-alt mr-1"></i> Cek GPS
+                    <button type="button" onclick="verifikasiSiswa()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-lg transition-all mt-2">
+                        Lanjut ke Absen <i class="fa fa-arrow-right ml-1"></i>
                     </button>
                 </div>
 
-                <button type="submit" id="btn-submit-mandiri" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blue-600/30 transition-all mt-2">
-                    KIRIM DATA ABSENSI
-                </button>
+                <!-- ================= TAHAP 2: FORM ABSEN ================= -->
+                <div id="step-2-absen" class="hidden space-y-5">
+                    
+                    <div class="bg-blue-50/50 border border-blue-100 p-4 rounded-xl text-center">
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Login sebagai:</p>
+                        <p class="text-base font-bold text-blue-700" id="display-nama-siswa">-</p>
+                    </div>
+
+                    <!-- Jenis Absen -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Jenis Absen</label>
+                        <div class="flex gap-3">
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="jenis_absen" value="datang" class="peer sr-only" checked>
+                                <div class="text-center py-2.5 rounded-xl border border-slate-200 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 font-semibold transition shadow-sm text-sm">Masuk / Datang</div>
+                            </label>
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="jenis_absen" value="pulang" class="peer sr-only">
+                                <div class="text-center py-2.5 rounded-xl border border-slate-200 peer-checked:bg-rose-600 peer-checked:text-white peer-checked:border-rose-600 font-semibold transition shadow-sm text-sm">Pulang</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Kamera -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-kamera">Foto Selfie (Bukti Kehadiran)</label>
+                        <input type="file" id="mandiri-kamera" accept="image/*" capture="user" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100 transition-all cursor-pointer">
+                        <img id="mandiri-preview" class="hidden mt-3 w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm" alt="Preview Foto">
+                    </div>
+
+                    <!-- Lokasi GPS -->
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div>
+                            <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Status Lokasi</p>
+                            <p id="mandiri-gps-status" class="text-sm font-bold text-amber-600">Belum diizinkan</p>
+                        </div>
+                        <button type="button" onclick="cekLokasiMandiri()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">
+                            <i class="fa fa-map-marker-alt mr-1"></i> Cek GPS
+                        </button>
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" onclick="kembaliKeStep1()" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3.5 rounded-xl font-bold transition-all">
+                            Kembali
+                        </button>
+                        <button type="submit" id="btn-submit-mandiri" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blue-600/30 transition-all">
+                            KIRIM ABSENSI
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
@@ -172,6 +190,7 @@
 
     <!-- ========================================== -->
     <!-- SCREEN 3: APP SCREEN (DASHBOARD ADMIN) -->
+    <!-- (Bagian Dashboard, Tabel Absensi, dan Laporan tidak dirubah, disembunyikan untuk menghemat spasi di snippet, SAMA seperti sebelumnya) -->
     <!-- ========================================== -->
     <div id="app-screen" class="hidden h-screen flex w-full">
         <!-- Sidebar Overlay (Mobile) -->
@@ -434,18 +453,14 @@
         function checkLogin() {
             const userData = sessionStorage.getItem('user');
             if(userData) {
-                // Sembunyikan form siswa dan form login
                 document.getElementById('absen-siswa-screen').classList.add('hidden');
                 document.getElementById('login-screen').classList.add('hidden');
-                
-                // Tampilkan admin dashboard
                 document.getElementById('app-screen').classList.remove('hidden');
                 const user = JSON.parse(userData);
                 document.getElementById('user-display').innerText = user.nama;
                 document.getElementById('welcome-name').innerText = user.nama;
                 initAdminApp();
             } else {
-                // Default ke halaman Absen Siswa
                 document.getElementById('app-screen').classList.add('hidden');
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('absen-siswa-screen').classList.remove('hidden');
@@ -481,7 +496,6 @@
                 document.getElementById('mandiri-kelas').innerHTML = optKelas;
                 isDataMasterLoaded = true;
             } else {
-                // Fallback UI if API fails to load data
                 document.getElementById('mandiri-kelas').innerHTML = '<option value="">-- Gagal memuat data (refresh halaman) --</option>';
             }
         }
@@ -499,6 +513,42 @@
             const siswaDiKelas = dataSemuaSiswa.filter(s => s.id_kelas === idKelas && s.status === 'Aktif');
             selNama.innerHTML = '<option value="">-- Pilih Nama Siswa --</option>' + siswaDiKelas.map(s => `<option value="${s.nis}">${s.nama}</option>`).join('');
             selNama.disabled = false;
+        }
+
+        // --- LOGIC TWO-STEP VERIFICATION SISWA ---
+        function verifikasiSiswa() {
+            const idKelas = document.getElementById('mandiri-kelas').value;
+            const selNama = document.getElementById('mandiri-nama');
+            const nis = selNama.value;
+            const pass = document.getElementById('mandiri-pass').value;
+
+            if(!idKelas) return showToast("Silakan pilih kelas terlebih dahulu!", false);
+            if(!nis) return showToast("Silakan pilih nama Anda!", false);
+            if(pass.toLowerCase() !== 'bismillah') return showToast("Kata sandi salah! Masukkan: bismillah", false);
+
+            // Jika benar, sembunyikan Step 1, tampilkan Step 2
+            const namaSiswa = selNama.options[selNama.selectedIndex].text;
+            document.getElementById('display-nama-siswa').innerText = namaSiswa;
+            
+            document.getElementById('step-1-auth').classList.add('hidden');
+            document.getElementById('step-2-absen').classList.remove('hidden');
+        }
+
+        function kembaliKeStep1() {
+            // Kembali ke tampilan auth, tapi reset kamera dan lokasi
+            document.getElementById('step-2-absen').classList.add('hidden');
+            document.getElementById('step-1-auth').classList.remove('hidden');
+            
+            document.getElementById('mandiri-pass').value = '';
+            document.getElementById('mandiri-kamera').value = '';
+            document.getElementById('mandiri-preview').classList.add('hidden');
+            
+            base64Img = null; 
+            usrLat = null; 
+            usrLng = null;
+            
+            document.getElementById('mandiri-gps-status').innerText = 'Belum diizinkan';
+            document.getElementById('mandiri-gps-status').className = 'text-sm font-bold text-amber-600';
         }
 
         // Logic Kamera & Canvas
@@ -558,11 +608,8 @@
             e.preventDefault();
             
             const nis = document.getElementById('mandiri-nama').value;
-            const pass = document.getElementById('mandiri-pass').value;
             const jenisDipilih = document.querySelector('input[name="jenis_absen"]:checked').value;
 
-            if(!nis) return showToast("Silakan pilih nama Anda!", false);
-            if(pass.toLowerCase() !== 'bismillah') return showToast("Kata sandi yang Anda masukkan salah!", false);
             if(!base64Img) return showToast("Foto bukti kehadiran belum diambil!", false);
             if(usrLat === null) return showToast("Silakan cek lokasi GPS Anda terlebih dahulu!", false);
 
@@ -581,13 +628,13 @@
                 
                 if(json.success) {
                     showToast(json.message);
+                    
+                    // Reset semuanya dan kembali ke Step 1
                     document.getElementById('form-absen-mandiri').reset();
-                    document.getElementById('mandiri-preview').classList.add('hidden');
                     document.getElementById('mandiri-nama').disabled = true;
                     document.getElementById('mandiri-nama').innerHTML = '<option value="">-- Pilih kelas terlebih dahulu --</option>';
-                    document.getElementById('mandiri-gps-status').innerText = 'Belum diizinkan';
-                    document.getElementById('mandiri-gps-status').className = 'text-sm font-bold text-amber-600';
-                    base64Img = null; usrLat = null; usrLng = null;
+                    kembaliKeStep1();
+                    
                 } else {
                     showToast(json.message, false);
                 }
