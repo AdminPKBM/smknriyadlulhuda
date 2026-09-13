@@ -29,6 +29,7 @@
             .print-container { width: 100%; border-collapse: collapse; margin-top: 20px; }
             .print-container th, .print-container td { border: 1px solid #334155; padding: 10px; font-size: 12pt; }
             .print-container th { background-color: #f1f5f9 !important; font-weight: bold; }
+            .print-container tr { page-break-inside: avoid; } /* Mencegah baris terpotong antar halaman */
             .print-header { display: flex; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 15px; margin-bottom: 20px; }
             .print-header img { height: 80px; width: auto; object-fit: contain; margin-right: 20px; }
             .print-header-text h2 { margin: 0; font-size: 18pt; font-weight: bold; color: #0f172a; text-transform: uppercase; }
@@ -57,13 +58,13 @@
     <!-- ========================================== -->
     <div id="absen-siswa-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-slate-100 relative overflow-y-auto">
         <!-- Tombol Akses Admin -->
-        <button onclick="showAdminLogin()" class="absolute top-4 right-4 sm:top-6 sm:right-6 bg-white/80 backdrop-blur hover:bg-white text-slate-700 px-4 py-2 rounded-xl font-semibold shadow-sm border border-slate-200 transition-all text-sm flex items-center gap-2">
+        <button onclick="showAdminLogin()" class="absolute top-4 right-4 sm:top-6 sm:right-6 bg-white/80 backdrop-blur hover:bg-white text-slate-700 px-4 py-2 rounded-xl font-semibold shadow-sm border border-slate-200 transition-all text-sm flex items-center gap-2 z-10">
             <i class="fa fa-user-shield text-blue-600"></i> Login Admin
         </button>
 
-        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full max-w-md border border-white my-8">
+        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full max-w-md border border-white my-8 z-0 relative mt-16 sm:mt-8">
             <div class="text-center mb-6">
-                <img src="https://smkriyadlulhuda.wordpress.com/wp-content/uploads/2014/12/logo-smk-rh.jpg" alt="Logo SMK Riyadlul Huda" class="h-16 sm:h-20 w-auto mx-auto object-contain mb-4">
+                <img src="https://smkriyadlulhuda.wordpress.com/wp-content/uploads/2014/12/logo-smk-rh.jpg" alt="Logo SMK Riyadlul Huda" class="h-16 sm:h-20 w-auto mx-auto object-contain mb-4 rounded-lg">
                 <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Absensi Kehadiran</h1>
                 <p class="text-slate-500 text-sm mt-1">SMK Riyadlul Huda</p>
             </div>
@@ -87,13 +88,13 @@
                 <!-- Kelas & Nama -->
                 <div class="grid grid-cols-1 gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pilih Kelas</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-kelas">Pilih Kelas</label>
                         <select id="mandiri-kelas" onchange="filterSiswaMandiri()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer" required>
                             <option value="">-- Memuat kelas... --</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Lengkap</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-nama">Nama Lengkap</label>
                         <select id="mandiri-nama" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer" disabled required>
                             <option value="">-- Pilih kelas terlebih dahulu --</option>
                         </select>
@@ -102,16 +103,16 @@
 
                 <!-- Password -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Kata Sandi Absen</label>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-pass">Kata Sandi Absen</label>
                     <input type="password" id="mandiri-pass" placeholder="Ketik: bismillah" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
                     <p class="text-[11px] text-slate-500 mt-1 font-medium"><i class="fa fa-info-circle text-blue-500"></i> Masukkan kata sandi <b>bismillah</b> untuk semua siswa.</p>
                 </div>
 
                 <!-- Kamera -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Foto Selfie (Bukti Kehadiran)</label>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="mandiri-kamera">Foto Selfie (Bukti Kehadiran)</label>
                     <input type="file" id="mandiri-kamera" accept="image/*" capture="user" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100 transition-all cursor-pointer" required>
-                    <img id="mandiri-preview" class="hidden mt-3 w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm">
+                    <img id="mandiri-preview" class="hidden mt-3 w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm" alt="Preview Foto">
                 </div>
 
                 <!-- Lokasi GPS -->
@@ -141,19 +142,19 @@
         </button>
         <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-2xl w-full max-w-md">
             <div class="text-center mb-8">
-                <img src="https://smkriyadlulhuda.wordpress.com/wp-content/uploads/2014/12/logo-smk-rh.jpg" alt="Logo" class="h-16 w-auto mx-auto object-contain mb-4">
+                <img src="https://smkriyadlulhuda.wordpress.com/wp-content/uploads/2014/12/logo-smk-rh.jpg" alt="Logo" class="h-16 w-auto mx-auto object-contain mb-4 rounded-lg">
                 <h1 class="text-2xl font-bold text-slate-800">Ruang Admin</h1>
             </div>
             <form id="form-login" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Username</label>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="username">Username</label>
                     <div class="relative">
                         <i class="fa fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                         <input type="text" id="username" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none" placeholder="Masukkan username" required>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="password">Password</label>
                     <div class="relative">
                         <i class="fa fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                         <input type="password" id="password" class="w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none" placeholder="••••••••" required>
@@ -182,7 +183,7 @@
             <div class="h-[72px] flex items-center justify-between px-6 bg-[#020617] border-b border-slate-800">
                 <div class="flex items-center gap-3">
                     <div class="bg-white p-1 rounded-lg">
-                        <img src="https://smkriyadlulhuda.wordpress.com/wp-content/uploads/2014/12/logo-smk-rh.jpg" class="h-8 w-auto object-contain" alt="Logo">
+                        <img src="https://smkriyadlulhuda.wordpress.com/wp-content/uploads/2014/12/logo-smk-rh.jpg" class="h-8 w-auto object-contain rounded" alt="Logo">
                     </div>
                     <span class="text-lg font-bold text-white tracking-wide">EduAbsen</span>
                 </div>
@@ -270,11 +271,11 @@
                     <div id="view-absensi" class="view-section hidden no-print">
                         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row items-end sm:items-center gap-4">
                             <div class="w-full sm:w-auto flex-1">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Tanggal</label>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5" for="absen-tgl">Tanggal</label>
                                 <input type="date" id="absen-tgl" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
                             </div>
                             <div class="w-full sm:w-auto flex-1">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Kelas</label>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5" for="absen-kelas">Kelas</label>
                                 <div class="relative">
                                     <select id="absen-kelas" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-2.5 appearance-none focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"><option value="">-- Pilih --</option></select>
                                     <i class="fa fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
@@ -312,15 +313,15 @@
                     <div id="view-laporan" class="view-section hidden">
                         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col md:flex-row items-end gap-4 no-print">
                             <div class="w-full md:w-auto flex-1">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Dari</label>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5" for="lap-tgl-mulai">Dari</label>
                                 <input type="date" id="lap-tgl-mulai" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
                             </div>
                             <div class="w-full md:w-auto flex-1">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Sampai</label>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5" for="lap-tgl-akhir">Sampai</label>
                                 <input type="date" id="lap-tgl-akhir" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
                             </div>
                             <div class="w-full md:w-auto flex-1">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Kelas</label>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5" for="lap-kelas">Kelas</label>
                                 <div class="relative">
                                     <select id="lap-kelas" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 appearance-none outline-none focus:ring-2 focus:ring-blue-500"><option value="">-- Pilih --</option></select>
                                     <i class="fa fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
@@ -479,6 +480,9 @@
                 const optKelas = '<option value="">-- Pilih Kelas --</option>' + resKelas.map(k => `<option value="${k.id_kelas}">${k.nama_kelas}</option>`).join('');
                 document.getElementById('mandiri-kelas').innerHTML = optKelas;
                 isDataMasterLoaded = true;
+            } else {
+                // Fallback UI if API fails to load data
+                document.getElementById('mandiri-kelas').innerHTML = '<option value="">-- Gagal memuat data (refresh halaman) --</option>';
             }
         }
 
@@ -502,17 +506,24 @@
             const file = e.target.files[0]; if(!file) return;
             const reader = new FileReader();
             reader.onload = function(ev) {
-                const img = new Image(); img.src = ev.target.result;
+                const img = new Image(); 
+                img.src = ev.target.result;
                 img.onload = function() {
-                    const cvs = document.createElement('canvas');
-                    const scale = 600 / img.width;
-                    cvs.width = 600; cvs.height = img.height * scale;
-                    cvs.getContext('2d').drawImage(img, 0, 0, cvs.width, cvs.height);
-                    base64Img = cvs.toDataURL('image/jpeg', 0.6);
-                    document.getElementById('mandiri-preview').src = base64Img;
-                    document.getElementById('mandiri-preview').classList.remove('hidden');
+                    try {
+                        const cvs = document.createElement('canvas');
+                        const scale = 600 / img.width;
+                        cvs.width = 600; 
+                        cvs.height = img.height * scale;
+                        cvs.getContext('2d').drawImage(img, 0, 0, cvs.width, cvs.height);
+                        base64Img = cvs.toDataURL('image/jpeg', 0.6);
+                        document.getElementById('mandiri-preview').src = base64Img;
+                        document.getElementById('mandiri-preview').classList.remove('hidden');
+                    } catch (err) {
+                        showToast("Gagal memproses gambar kamera.", false);
+                    }
                 }
-            }; reader.readAsDataURL(file);
+            }; 
+            reader.readAsDataURL(file);
         });
 
         // Logic GPS
@@ -532,7 +543,11 @@
                         if(jrk <= MAX_RADIUS) { stat.innerText = `Sesuai Area (${jrk}m)`; stat.className="text-sm font-bold text-green-600"; }
                         else { stat.innerText = `Terlalu Jauh (${jrk}m)`; stat.className="text-sm font-bold text-red-600"; alert("Anda berada di luar radius sekolah!"); }
                     },
-                    err => { stat.innerText = "GPS Ditolak!"; stat.className="text-sm font-bold text-red-600"; alert("Mohon izinkan akses GPS browser Anda!"); },
+                    err => { 
+                        stat.innerText = "GPS Ditolak/Error!"; 
+                        stat.className="text-sm font-bold text-red-600"; 
+                        alert("Mohon izinkan akses lokasi (GPS) pada browser Anda!"); 
+                    },
                     {enableHighAccuracy: true}
                 );
             } else alert("Browser tidak mendukung GPS.");
