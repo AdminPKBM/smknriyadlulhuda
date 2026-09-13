@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin - Sistem Absensi SMK Riyadlul Huda</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Konfigurasi Font & Tema -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Print Styles */
+        @media print {
+            @page { margin: 1.5cm; size: A4 portrait; }
+            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .print-container { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            .print-container th, .print-container td { border: 1px solid #334155; padding: 10px; font-size: 12pt; }
+            .print-container th { background-color: #f1f5f9 !important; font-weight: bold; }
+            .print-header { display: flex; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 15px; margin-bottom: 20px; }
+            .print-header img { height: 80px; width: auto; object-fit: contain; margin-right: 20px; }
+            .print-header-text h2 { margin: 0; font-size: 18pt; font-weight: bold; color: #0f172a; text-transform: uppercase; }
+            .print-header-text p { margin: 4px 0 0 0; font-size: 12pt; color: #475569; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased overflow-hidden">
+
+    <!-- GLOBAL COMPONENTS -->
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 right-5 transform transition-all duration-300 translate-x-[150%] opacity-0 px-5 py-3 rounded-xl shadow-2xl z-[100] text-white font-medium flex items-center gap-3">
+        <i id="toast-icon" class="fa fa-info-circle text-lg"></i>
+        <span id="toast-msg">Pesan</span>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[90] hidden transition-opacity">
+        <div class="animate-spin rounded-full h-14 w-14 border-4 border-white/20 border-t-blue-500 mb-4 shadow-lg"></div>
+        <p class="text-white font-medium tracking-wide">Memproses data...</p>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LOGIN SCREEN -->
+    <!-- ========================================== -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-slate-100">
+        <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full max-w-md border border-white">
+            <div class="text-center mb-8">
+                <img src="https://smkriyadlulhuda.wordpress.com/wp-content/uploads/2014/12/logo-smk-rh.jpg" alt="Logo SMK Riyadlul Huda" class="h-20 w-auto mx-auto object-contain mb-4">
+                <h1 class="text-2xl font-bold text-slate-800">EduAbsen Admin</h1>
+                <p class="text-slate-500 text-sm mt-1">Sistem Informasi Kehadiran Siswa</p>
+            </div>
+            <form id="form-login" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Username</label>
+                    <div class="relative">
+                        <i class="fa fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="username" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all outline-none" placeholder="Masukkan username" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
+                    <div class="relative">
+                        <i class="fa fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="password" id="password" class="w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all outline-none" placeholder="••••••••" required>
+                        <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
+                            <i class="fa fa-eye" id="eye-icon"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold shadow-lg shadow-blue-600/30 transition-all active:scale-[0.98]">
+                    Masuk ke Sistem
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- APP SCREEN (DASHBOARD & VIEWS) -->
+    <!-- ========================================== -->
+    <div id="app-screen" class="hidden h-screen flex w-full">
+        
+        <!-- Sidebar Overlay (Mobile) -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 w-[280px] bg-[#0f172a] text-slate-300 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex flex-col shadow-2xl lg:shadow-none">
+            <!-- Sidebar Header / Logo -->
+            <div class="h-[72px] flex items-center justify-between px-6 bg-[#020617] border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white p-1 rounded-lg">
+                        <img src="https://smkriyadlulhuda.wordpress.com/wp-content/uploads/2014/12/logo-smk-rh.jpg" class="h-8 w-auto object-contain" alt="Logo">
+                    </div>
+                    <span class="text-lg font-bold text-white tracking-wide">EduAbsen</span>
+                </div>
+                <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-white p-2 focus:outline-none">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- Sidebar Navigation -->
+            <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 custom-scrollbar">
+                <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Menu Utama</p>
+                
+                <a href="#" onclick="navigate('dashboard')" id="nav-dashboard" class="nav-item flex items-center gap-3 py-3 px-4 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all font-medium">
+                    <i class="fa fa-chart-pie w-5 text-center text-slate-400 group-hover:text-blue-400"></i> Dashboard
+                </a>
+                
+                <a href="#" onclick="navigate('absensi')" id="nav-absensi" class="nav-item flex items-center gap-3 py-3 px-4 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all font-medium">
+                    <i class="fa fa-clipboard-check w-5 text-center text-slate-400 group-hover:text-green-400"></i> Kelola Absensi
+                </a>
+                
+                <a href="#" onclick="navigate('laporan')" id="nav-laporan" class="nav-item flex items-center gap-3 py-3 px-4 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all font-medium">
+                    <i class="fa fa-print w-5 text-center text-slate-400 group-hover:text-purple-400"></i> Laporan & Cetak
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="p-4 border-t border-slate-800 bg-[#0b1121]">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all font-medium border border-transparent hover:border-red-500/20">
+                    <i class="fa fa-sign-out-alt"></i> Keluar
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative w-full">
+            
+            <!-- Top Header -->
+            <header class="h-[72px] bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 z-30 no-print flex-shrink-0 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-800" id="page-title">Dashboard</h2>
+                </div>
+                <div class="flex items-center gap-3 bg-slate-100 py-1.5 px-3 rounded-full border border-slate-200">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                        <i class="fa fa-user"></i>
+                    </div>
+                    <span id="user-display" class="font-semibold text-slate-700 text-sm hidden sm:block pr-2">Admin</span>
+                </div>
+            </header>
+
+            <!-- Views Container -->
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+                <div class="max-w-7xl mx-auto w-full">
+                
+                    <!-- ========================================== -->
+                    <!-- VIEW: DASHBOARD -->
+                    <!-- ========================================== -->
+                    <div id="view-dashboard" class="view-section">
+                        <!-- Alert / Welcome -->
+                        <div class="bg-blue-600 rounded-2xl p-6 sm:p-8 mb-6 text-white shadow-lg relative overflow-hidden">
+                            <div class="relative z-10">
+                                <h3 class="text-2xl font-bold mb-2">Selamat Datang, <span id="welcome-name">Admin</span>! 👋</h3>
+                                <p class="text-blue-100 max-w-xl">Berikut adalah ringkasan data kehadiran siswa untuk hari ini. Pastikan seluruh data absensi telah ter-input dengan benar.</p>
+                            </div>
+                            <i class="fa fa-chart-line absolute -right-6 -bottom-6 text-9xl text-white/10 -rotate-12"></i>
+                        </div>
+
+                        <!-- Stats Grid Responsif -->
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-8">
+                            <!-- Card 1 -->
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between group hover:shadow-md transition-all">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:scale-110 transition-transform"><i class="fa fa-users text-xl"></i></div>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500 text-sm font-medium mb-1">Total Siswa</p>
+                                    <h3 class="text-3xl font-bold text-slate-800" id="dash-total">-</h3>
+                                </div>
+                            </div>
+                            <!-- Card 2 -->
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between group hover:shadow-md transition-all">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="p-2.5 bg-green-50 text-green-600 rounded-xl group-hover:scale-110 transition-transform"><i class="fa fa-check-circle text-xl"></i></div>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500 text-sm font-medium mb-1">Hadir</p>
+                                    <h3 class="text-3xl font-bold text-green-600" id="dash-hadir">-</h3>
+                                </div>
+                            </div>
+                            <!-- Card 3 -->
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between group hover:shadow-md transition-all">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="p-2.5 bg-yellow-50 text-yellow-600 rounded-xl group-hover:scale-110 transition-transform"><i class="fa fa-notes-medical text-xl"></i></div>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500 text-sm font-medium mb-1">Sakit</p>
+                                    <h3 class="text-3xl font-bold text-yellow-600" id="dash-sakit">-</h3>
+                                </div>
+                            </div>
+                            <!-- Card 4 -->
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between group hover:shadow-md transition-all">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="p-2.5 bg-purple-50 text-purple-600 rounded-xl group-hover:scale-110 transition-transform"><i class="fa fa-envelope-open-text text-xl"></i></div>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500 text-sm font-medium mb-1">Izin</p>
+                                    <h3 class="text-3xl font-bold text-purple-600" id="dash-izin">-</h3>
+                                </div>
+                            </div>
+                            <!-- Card 5 -->
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between group hover:shadow-md transition-all col-span-2 sm:col-span-1 lg:col-span-1">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="p-2.5 bg-red-50 text-red-600 rounded-xl group-hover:scale-110 transition-transform"><i class="fa fa-user-times text-xl"></i></div>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500 text-sm font-medium mb-1">Alpa</p>
+                                    <h3 class="text-3xl font-bold text-red-600" id="dash-alpa">-</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- VIEW: KELOLA ABSENSI -->
+                    <!-- ========================================== -->
+                    <div id="view-absensi" class="view-section hidden no-print">
+                        
+                        <!-- Filter Bar -->
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row items-end sm:items-center gap-4">
+                            <div class="w-full sm:w-auto flex-1">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Tanggal Absensi</label>
+                                <input type="date" id="absen-tgl" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition">
+                            </div>
+                            <div class="w-full sm:w-auto flex-1">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Pilih Kelas</label>
+                                <div class="relative">
+                                    <select id="absen-kelas" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-2.5 appearance-none focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+                                        <option value="">-- Silakan Pilih --</option>
+                                    </select>
+                                    <i class="fa fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+                                </div>
+                            </div>
+                            <div class="w-full sm:w-auto mt-2 sm:mt-0">
+                                <button onclick="loadAbsensi()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2 h-[46px]">
+                                    <i class="fa fa-search"></i> Tampilkan
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Table Area (Responsive Horizontal Scroll) -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-left border-collapse min-w-[800px]">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
+                                            <th class="py-4 px-5 font-semibold w-24">NIS</th>
+                                            <th class="py-4 px-5 font-semibold min-w-[200px]">Nama Lengkap</th>
+                                            <th class="py-4 px-5 font-semibold w-24 text-center">J. Datang</th>
+                                            <th class="py-4 px-5 font-semibold w-24 text-center">J. Pulang</th>
+                                            <th class="py-4 px-5 font-semibold w-40">Status</th>
+                                            <th class="py-4 px-5 font-semibold min-w-[200px]">Keterangan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="absen-table-body" class="divide-y divide-slate-100 text-slate-700">
+                                        <tr>
+                                            <td colspan="6" class="text-center py-12">
+                                                <div class="flex flex-col items-center justify-center text-slate-400">
+                                                    <i class="fa fa-clipboard-list text-4xl mb-3 text-slate-300"></i>
+                                                    <p>Pilih tanggal dan kelas terlebih dahulu</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Action Footer -->
+                            <div class="p-5 bg-slate-50 border-t border-slate-100 text-right">
+                                <button onclick="saveAbsensi()" id="btn-save-absen" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold shadow-md shadow-green-600/20 transition-all hidden items-center justify-center gap-2">
+                                    <i class="fa fa-save"></i> Simpan Data Absensi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- VIEW: LAPORAN -->
+                    <!-- ========================================== -->
+                    <div id="view-laporan" class="view-section hidden">
+                        
+                        <!-- Filter Bar -->
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col md:flex-row items-end gap-4 no-print">
+                            <div class="w-full md:w-auto flex-1">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Dari Tanggal</label>
+                                <input type="date" id="lap-tgl-mulai" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="hidden md:block self-center pb-2 text-slate-400 font-bold">-</div>
+                            <div class="w-full md:w-auto flex-1">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Sampai Tanggal</label>
+                                <input type="date" id="lap-tgl-akhir" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="w-full md:w-auto flex-1">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Kelas</label>
+                                <div class="relative">
+                                    <select id="lap-kelas" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-2.5 appearance-none outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                                        <option value="">-- Silakan Pilih --</option>
+                                    </select>
+                                    <i class="fa fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+                                </div>
+                            </div>
+                            <div class="w-full md:w-auto flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
+                                <button onclick="loadLaporan()" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2 h-[46px]">
+                                    <i class="fa fa-search"></i> Proses
+                                </button>
+                                <button onclick="window.print()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl font-semibold shadow-md shadow-slate-800/20 transition-all flex items-center justify-center gap-2 h-[46px]">
+                                    <i class="fa fa-print"></i> Cetak
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Print Area -->
+                        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100 print-area relative">
+                            <!-- KOP SURAT (Hanya tampil saat print) -->
+                            <div class="print-only print-header">
+                                <img src="https://smkriyadlulhuda.wordpress.com/wp-content/uploads/2014/12/logo-smk-rh.jpg" alt="Logo Sekolah">
+                                <div class="print-header-text">
+                                    <h2>Laporan Kehadiran Siswa</h2>
+                                    <p>SMK Riyadlul Huda</p>
+                                    <p id="print-subtitle" class="font-bold mt-1">-</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Tabel Laporan -->
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-left border-collapse min-w-[700px] print-container">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
+                                            <th class="py-4 px-4 font-semibold w-24">NIS</th>
+                                            <th class="py-4 px-4 font-semibold min-w-[200px]">Nama Lengkap</th>
+                                            <th class="py-4 px-4 font-semibold text-center text-green-600">Hadir</th>
+                                            <th class="py-4 px-4 font-semibold text-center text-yellow-600">Sakit</th>
+                                            <th class="py-4 px-4 font-semibold text-center text-purple-600">Izin</th>
+                                            <th class="py-4 px-4 font-semibold text-center text-red-600">Alpa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lap-table-body" class="divide-y divide-slate-100 text-slate-700">
+                                        <tr>
+                                            <td colspan="6" class="text-center py-12">
+                                                <div class="flex flex-col items-center justify-center text-slate-400 no-print">
+                                                    <i class="fa fa-filter text-4xl mb-3 text-slate-300"></i>
+                                                    <p>Tentukan filter tanggal dan kelas untuk melihat laporan</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT LOGIC -->
+    <!-- ========================================== -->
+    <script>
+        // ==========================================
+        // GANTI STRING DI BAWAH DENGAN URL WEB APP GAS ANDA
+        const API_URL = 'PASTE_URL_WEB_APP_APPS_SCRIPT_DI_SINI'; 
+        // ==========================================
+
+        let currentAbsen = [];
+
+        // --- UI Interactions ---
+        function togglePassword() {
+            const pw = document.getElementById('password');
+            const icon = document.getElementById('eye-icon');
+            if(pw.type === 'password') { pw.type = 'text'; icon.className = 'fa fa-eye-slash'; }
+            else { pw.type = 'password'; icon.className = 'fa fa-eye'; }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            // Toggle translate class on sidebar
+            sidebar.classList.toggle('-translate-x-full');
+            
+            // Toggle overlay visibility
+            if(sidebar.classList.contains('-translate-x-full')) {
+                overlay.classList.add('hidden');
+            } else {
+                overlay.classList.remove('hidden');
+            }
+        }
+
+        function toggleLoad(show) { 
+            const loader = document.getElementById('loading');
+            if(show) {
+                loader.classList.remove('hidden');
+                setTimeout(() => loader.style.opacity = '1', 10);
+            } else {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.classList.add('hidden'), 300);
+            }
+        }
+
+        function showToast(msg, isSuccess=true) { 
+            const t = document.getElementById('toast'); 
+            const icon = document.getElementById('toast-icon');
+            
+            document.getElementById('toast-msg').innerText = msg;
+            
+            if(isSuccess) {
+                t.className = `fixed top-5 right-5 px-5 py-3.5 rounded-xl shadow-xl z-[100] text-white font-medium transition-all duration-300 bg-emerald-500 translate-x-0 opacity-100 flex items-center gap-3`;
+                icon.className = 'fa fa-check-circle text-lg';
+            } else {
+                t.className = `fixed top-5 right-5 px-5 py-3.5 rounded-xl shadow-xl z-[100] text-white font-medium transition-all duration-300 bg-rose-500 translate-x-0 opacity-100 flex items-center gap-3`;
+                icon.className = 'fa fa-exclamation-triangle text-lg';
+            }
+            
+            setTimeout(()=> { 
+                t.classList.replace('translate-x-0','translate-x-[150%]'); 
+                t.classList.replace('opacity-100','opacity-0'); 
+            }, 3500);
+        }
+
+        // --- API & Auth Logic ---
+        async function api(action, data={}) {
+            try {
+                const res = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({action, data})
+                });
+                const json = await res.json();
+                if(!json.success) throw new Error(json.message);
+                return json.data;
+            } catch(e) { 
+                showToast(e.message || "Gagal terhubung ke server", false); 
+                return null; 
+            }
+        }
+
+        document.getElementById('form-login').onsubmit = async (e) => {
+            e.preventDefault(); 
+            toggleLoad(true);
+            const user = await api('login', { 
+                username: document.getElementById('username').value, 
+                password: document.getElementById('password').value 
+            });
+            toggleLoad(false);
+            if(user) { 
+                sessionStorage.setItem('user', JSON.stringify(user)); 
+                showToast("Berhasil login!");
+                checkLogin(); 
+            }
+        };
+
+        function checkLogin() {
+            const userData = sessionStorage.getItem('user');
+            if(userData) {
+                const user = JSON.parse(userData);
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                document.getElementById('user-display').innerText = user.nama;
+                document.getElementById('welcome-name').innerText = user.nama;
+                initApp();
+            } else {
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('app-screen').classList.add('hidden');
+            }
+        }
+
+        function logout() { 
+            sessionStorage.clear(); 
+            checkLogin(); 
+        }
+
+        // --- Navigation ---
+        function navigate(view) {
+            // Hide all views
+            document.querySelectorAll('.view-section').forEach(e => e.classList.add('hidden'));
+            document.getElementById('view-'+view).classList.remove('hidden');
+            
+            // Manage Active State on Sidebar
+            document.querySelectorAll('.nav-item').forEach(e => {
+                e.classList.remove('bg-slate-800', 'text-white', 'border-l-4', 'border-blue-500');
+                e.classList.add('text-slate-300');
+            });
+            const activeNav = document.getElementById('nav-'+view);
+            activeNav.classList.remove('text-slate-300');
+            activeNav.classList.add('bg-slate-800', 'text-white', 'border-l-4', 'border-blue-500');
+
+            // Change Header Title
+            const titles = { dashboard: 'Dashboard Statistik', absensi: 'Kelola Absensi Siswa', laporan: 'Laporan Kehadiran' };
+            document.getElementById('page-title').innerText = titles[view];
+
+            // Close sidebar on mobile after click
+            if(window.innerWidth < 1024) {
+                const sidebar = document.getElementById('sidebar');
+                if(!sidebar.classList.contains('-translate-x-full')) {
+                    toggleSidebar();
+                }
+            }
+
+            // Fetch data if needed
+            if(view === 'dashboard') loadDashboard();
+        }
+
+        async function initApp() {
+            navigate('dashboard');
+            
+            // Load Dropdown Kelas
+            const kelas = await api('getKelas');
+            if(kelas) {
+                const opts = kelas.map(k => `<option value="${k.id_kelas}">${k.nama_kelas}</option>`).join('');
+                document.getElementById('absen-kelas').innerHTML += opts;
+                document.getElementById('lap-kelas').innerHTML += opts;
+            }
+            
+            // Set Default Dates to Today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('absen-tgl').value = today;
+            document.getElementById('lap-tgl-mulai').value = today;
+            document.getElementById('lap-tgl-akhir').value = today;
+        }
+
+        // --- Data Fetching ---
+        async function loadDashboard() {
+            toggleLoad(true); 
+            const s = await api('getDashboard'); 
+            toggleLoad(false);
+            if(s) {
+                ['total','hadir','sakit','izin','alpa'].forEach(k => {
+                    const el = document.getElementById('dash-'+k);
+                    if(el) el.innerText = s[k==='total'?'totalSiswa':k];
+                });
+            }
+        }
+
+        async function loadAbsensi() {
+            const tgl = document.getElementById('absen-tgl').value;
+            const kls = document.getElementById('absen-kelas').value;
+            if(!tgl || !kls) return showToast("Mohon pilih tanggal dan kelas!", false);
+            
+            toggleLoad(true); 
+            currentAbsen = await api('getAbsensi', {tanggal: tgl, id_kelas: kls}); 
+            toggleLoad(false);
+            
+            if(currentAbsen) {
+                let html = currentAbsen.map((s,i) => `
+                    <tr class="hover:bg-slate-50/80 transition-colors border-b border-slate-100">
+                        <td class="py-3 px-5 text-sm font-medium text-slate-500">${s.nis}</td>
+                        <td class="py-3 px-5 text-sm font-semibold text-slate-800">${s.nama}</td>
+                        <td class="py-3 px-5 text-sm text-center">
+                            <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-mono text-xs border border-blue-100 shadow-sm whitespace-nowrap">${s.jam_datang || '--:--'}</span>
+                        </td>
+                        <td class="py-3 px-5 text-sm text-center">
+                            <span class="bg-rose-50 text-rose-700 px-2.5 py-1 rounded-md font-mono text-xs border border-rose-100 shadow-sm whitespace-nowrap">${s.jam_pulang || '--:--'}</span>
+                        </td>
+                        <td class="py-3 px-5">
+                            <select onchange="currentAbsen[${i}].status=this.value" class="w-full min-w-[120px] border border-slate-200 bg-white p-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer">
+                                <option value="" class="text-slate-400">- Pilih Status -</option>
+                                ${['Hadir','Sakit','Izin','Alpa'].map(x => `<option value="${x}" ${s.status===x?'selected':''}>${x}</option>`).join('')}
+                            </select>
+                        </td>
+                        <td class="py-3 px-5">
+                            <input type="text" onchange="currentAbsen[${i}].keterangan=this.value" value="${s.keterangan||''}" placeholder="Catatan opsional..." class="w-full min-w-[180px] border border-slate-200 p-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </td>
+                    </tr>
+                `).join('');
+                
+                document.getElementById('absen-table-body').innerHTML = html || `<tr><td colspan="6" class="text-center py-10 text-slate-500">Data siswa tidak ditemukan untuk kelas ini.</td></tr>`;
+                
+                const btnSave = document.getElementById('btn-save-absen');
+                if(currentAbsen.length > 0) {
+                    btnSave.classList.remove('hidden');
+                    btnSave.classList.add('flex');
+                } else {
+                    btnSave.classList.add('hidden');
+                    btnSave.classList.remove('flex');
+                }
+            }
+        }
+
+        async function saveAbsensi() {
+            toggleLoad(true);
+            const res = await api('saveAbsensi', {
+                tanggal: document.getElementById('absen-tgl').value, 
+                id_kelas: document.getElementById('absen-kelas').value, 
+                absensiData: currentAbsen
+            });
+            toggleLoad(false);
+            if(res !== null) { 
+                showToast("Data absensi berhasil disimpan!"); 
+                loadDashboard(); 
+            }
+        }
+
+        async function loadLaporan() {
+            const tgl_mulai = document.getElementById('lap-tgl-mulai').value;
+            const tgl_akhir = document.getElementById('lap-tgl-akhir').value;
+            const id_kelas = document.getElementById('lap-kelas').value;
+            
+            if(!tgl_mulai || !tgl_akhir || !id_kelas) return showToast("Lengkapi semua filter pencarian!", false);
+
+            toggleLoad(true); 
+            const r = await api('getLaporan', {tgl_mulai, tgl_akhir, id_kelas}); 
+            toggleLoad(false);
+            
+            if(r) {
+                // Update Keterangan Print
+                const namaKelas = document.getElementById('lap-kelas').options[document.getElementById('lap-kelas').selectedIndex].text;
+                document.getElementById('print-subtitle').innerText = `Kelas: ${namaKelas} | Periode: ${tgl_mulai} s.d ${tgl_akhir}`;
+                
+                let html = r.map((x, i) => `
+                    <tr class="${i%2===0 ? 'bg-white' : 'bg-slate-50/50'} border-b border-slate-100 hover:bg-blue-50/30 transition-colors">
+                        <td class="py-3 px-4 text-sm font-medium text-slate-500">${x.nis}</td>
+                        <td class="py-3 px-4 text-sm font-semibold text-slate-800">${x.nama}</td>
+                        <td class="py-3 px-4 text-sm text-center"><span class="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full">${x.hadir}</span></td>
+                        <td class="py-3 px-4 text-sm text-center"><span class="bg-yellow-100 text-yellow-700 font-bold px-3 py-1 rounded-full">${x.sakit}</span></td>
+                        <td class="py-3 px-4 text-sm text-center"><span class="bg-purple-100 text-purple-700 font-bold px-3 py-1 rounded-full">${x.izin}</span></td>
+                        <td class="py-3 px-4 text-sm text-center"><span class="bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full">${x.alpa}</span></td>
+                    </tr>
+                `).join('');
+                
+                document.getElementById('lap-table-body').innerHTML = html || `<tr><td colspan="6" class="text-center py-10 text-slate-500">Tidak ada rekap data pada periode ini.</td></tr>`;
+            }
+        }
+
+        // Run on Startup
+        window.onload = checkLogin;
+    </script>
+</body>
+</html>
