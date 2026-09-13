@@ -88,14 +88,14 @@
                 <div class="grid grid-cols-1 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pilih Kelas</label>
-                        <select id="mandiri-kelas" onchange="filterSiswaMandiri()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer">
+                        <select id="mandiri-kelas" onchange="filterSiswaMandiri()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer" required>
                             <option value="">-- Memuat kelas... --</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Lengkap</label>
-                        <select id="mandiri-nama" onchange="validasiFormMandiri()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer" disabled>
-                            <option value="">-- Pilih kelas dahulu --</option>
+                        <select id="mandiri-nama" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer" disabled required>
+                            <option value="">-- Pilih kelas terlebih dahulu --</option>
                         </select>
                     </div>
                 </div>
@@ -103,13 +103,14 @@
                 <!-- Password -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Kata Sandi Absen</label>
-                    <input type="password" id="mandiri-pass" placeholder="Masukkan password" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
+                    <input type="password" id="mandiri-pass" placeholder="Ketik: bismillah" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
+                    <p class="text-[11px] text-slate-500 mt-1 font-medium"><i class="fa fa-info-circle text-blue-500"></i> Masukkan kata sandi <b>bismillah</b> untuk semua siswa.</p>
                 </div>
 
                 <!-- Kamera -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Foto Selfie (Bukti Kehadiran)</label>
-                    <input type="file" id="mandiri-kamera" accept="image/*" capture="user" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100 transition-all cursor-pointer">
+                    <input type="file" id="mandiri-kamera" accept="image/*" capture="user" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100 transition-all cursor-pointer" required>
                     <img id="mandiri-preview" class="hidden mt-3 w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm">
                 </div>
 
@@ -136,7 +137,7 @@
     <!-- ========================================== -->
     <div id="login-screen" class="hidden min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-800 to-slate-900 relative">
         <button onclick="checkLogin()" class="absolute top-4 left-4 sm:top-6 sm:left-6 text-white/70 hover:text-white flex items-center gap-2 font-medium transition-colors">
-            <i class="fa fa-arrow-left"></i> Kembali
+            <i class="fa fa-arrow-left"></i> Kembali ke Absen
         </button>
         <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-2xl w-full max-w-md">
             <div class="text-center mb-8">
@@ -169,7 +170,7 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- SCREEN 3: APP SCREEN (DASHBOARD & VIEWS) -->
+    <!-- SCREEN 3: APP SCREEN (DASHBOARD ADMIN) -->
     <!-- ========================================== -->
     <div id="app-screen" class="hidden h-screen flex w-full">
         <!-- Sidebar Overlay (Mobile) -->
@@ -470,7 +471,7 @@
             if(isDataMasterLoaded) return;
             toggleLoad(true);
             const resKelas = await api('getKelas');
-            const resSiswa = await api('getSiswa'); // Asumsi endpoint actionGetSiswa mengembalikan list semua siswa
+            const resSiswa = await api('getSiswa'); 
             toggleLoad(false);
 
             if(resKelas && resSiswa) {
@@ -486,7 +487,7 @@
             const selNama = document.getElementById('mandiri-nama');
             
             if(!idKelas) {
-                selNama.innerHTML = '<option value="">-- Pilih kelas dahulu --</option>';
+                selNama.innerHTML = '<option value="">-- Pilih kelas terlebih dahulu --</option>';
                 selNama.disabled = true;
                 return;
             }
@@ -545,10 +546,10 @@
             const pass = document.getElementById('mandiri-pass').value;
             const jenisDipilih = document.querySelector('input[name="jenis_absen"]:checked').value;
 
-            if(!nis) return showToast("Pilih nama Anda!", false);
-            if(pass.toLowerCase() !== 'bismillah') return showToast("Kata sandi salah!", false);
+            if(!nis) return showToast("Silakan pilih nama Anda!", false);
+            if(pass.toLowerCase() !== 'bismillah') return showToast("Kata sandi yang Anda masukkan salah!", false);
             if(!base64Img) return showToast("Foto bukti kehadiran belum diambil!", false);
-            if(usrLat === null) return showToast("Silakan cek lokasi GPS Anda!", false);
+            if(usrLat === null) return showToast("Silakan cek lokasi GPS Anda terlebih dahulu!", false);
 
             toggleLoad(true);
             try {
@@ -568,7 +569,7 @@
                     document.getElementById('form-absen-mandiri').reset();
                     document.getElementById('mandiri-preview').classList.add('hidden');
                     document.getElementById('mandiri-nama').disabled = true;
-                    document.getElementById('mandiri-nama').innerHTML = '<option value="">-- Pilih kelas dahulu --</option>';
+                    document.getElementById('mandiri-nama').innerHTML = '<option value="">-- Pilih kelas terlebih dahulu --</option>';
                     document.getElementById('mandiri-gps-status').innerText = 'Belum diizinkan';
                     document.getElementById('mandiri-gps-status').className = 'text-sm font-bold text-amber-600';
                     base64Img = null; usrLat = null; usrLng = null;
