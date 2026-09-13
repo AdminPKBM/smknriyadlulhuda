@@ -193,10 +193,10 @@
     <!-- ========================================== -->
     <div id="app-screen" class="hidden h-screen flex w-full">
         <!-- Sidebar Overlay (Mobile) -->
-        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity"></div>
+        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity no-print"></div>
 
         <!-- Sidebar -->
-        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 w-[280px] bg-[#0f172a] text-slate-300 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex flex-col shadow-2xl lg:shadow-none">
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 w-[280px] bg-[#0f172a] text-slate-300 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex flex-col shadow-2xl lg:shadow-none no-print">
             <!-- Sidebar Header / Logo -->
             <div class="h-[72px] flex items-center justify-between px-6 bg-[#020617] border-b border-slate-800">
                 <div class="flex items-center gap-3">
@@ -233,7 +233,7 @@
         </aside>
 
         <!-- Main Content Area -->
-        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative w-full">
+        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative w-full print:h-auto print:overflow-visible print:block">
             <!-- Top Header -->
             <header class="h-[72px] bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 z-30 no-print flex-shrink-0 shadow-sm">
                 <div class="flex items-center gap-4">
@@ -249,7 +249,7 @@
             </header>
 
             <!-- Views Container -->
-            <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar print:overflow-visible print:h-auto print:p-0">
                 <div class="max-w-7xl mx-auto w-full">
                 
                     <!-- VIEW: DASHBOARD -->
@@ -395,12 +395,13 @@
         let currentAbsen = [];
         let dataSemuaSiswa = [];
         let isDataMasterLoaded = false;
+        let isKelasOptionsLoaded = false; // guard against duplicate <option> on re-login
         
         // Konstanta Absensi Mandiri (Siswa)
         const SCH_LAT = -7.4716212;
         const SCH_LNG = 107.9350232;
         const MAX_RADIUS = 100;
-        let usrLat = null, usrLng = null, base64Img = null;
+        let usrLat = null, usrLng = null, base64Img = null, gpsValid = false;
 
         // --- UI UTILITIES ---
         function togglePassword() {
@@ -439,29 +440,13 @@
             setTimeout(()=> { t.classList.replace('translate-x-0','translate-x-[150%]'); t.classList.replace('opacity-100','opacity-0'); }, 3500);
         }
 
-        // Perbaikan: Penanganan error yang lebih robust saat fetch ke Apps Script
         async function api(action, data={}) {
             try {
-                const res = await fetch(API_URL, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
-                    body: JSON.stringify({action, data}) 
-                });
-                if (!res.ok) throw new Error("Gagal terhubung ke server (Network Error)");
-                
-                const textRes = await res.text();
-                // Validasi JSON manual untuk antisipasi response HTML (biasanya dari error GAS/Login)
-                try {
-                    const json = JSON.parse(textRes);
-                    if(!json.success) throw new Error(json.message || "Terjadi kesalahan di server");
-                    return json.data;
-                } catch (jsonErr) {
-                    throw new Error("Server tidak mengembalikan format data yang valid.");
-                }
-            } catch(e) { 
-                showToast(e.message || "Gagal terhubung ke server", false); 
-                return null; 
-            }
+                const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({action, data}) });
+                const json = await res.json();
+                if(!json.success) throw new Error(json.message);
+                return json.data;
+            } catch(e) { showToast(e.message || "Gagal terhubung ke server", false); return null; }
         }
 
         // --- NAVIGATION & AUTH ---
@@ -495,14 +480,20 @@
             if(user) { sessionStorage.setItem('user', JSON.stringify(user)); showToast("Berhasil login!"); checkLogin(); }
         };
 
-        function logout() { sessionStorage.clear(); checkLogin(); }
+        function logout() {
+            sessionStorage.clear();
+            // FIX: reset guard flags so admin dropdowns & kelas cache reload cleanly on next login
+            isKelasOptionsLoaded = false;
+            isDataMasterLoaded = false;
+            checkLogin();
+        }
 
         // --- SISTEM ABSENSI MANDIRI (SISWA) ---
         async function initMandiriApp() {
             if(isDataMasterLoaded) return;
             toggleLoad(true);
-            const resKelas = await api('getKelas');
-            const resSiswa = await api('getSiswa'); 
+            // FIX: load kelas & siswa in parallel instead of sequential awaits
+            const [resKelas, resSiswa] = await Promise.all([api('getKelas'), api('getSiswa')]);
             toggleLoad(false);
 
             if(resKelas && resSiswa) {
@@ -541,6 +532,7 @@
             if(!nis) return showToast("Silakan pilih nama Anda!", false);
             if(pass.toLowerCase() !== 'bismillah') return showToast("Kata sandi salah! Masukkan: bismillah", false);
 
+            // Jika benar, sembunyikan Step 1, tampilkan Step 2
             const namaSiswa = selNama.options[selNama.selectedIndex].text;
             document.getElementById('display-nama-siswa').innerText = namaSiswa;
             
@@ -549,17 +541,19 @@
         }
 
         function kembaliKeStep1() {
+            // Kembali ke tampilan auth, tapi reset kamera dan lokasi
             document.getElementById('step-2-absen').classList.add('hidden');
             document.getElementById('step-1-auth').classList.remove('hidden');
             
             document.getElementById('mandiri-pass').value = '';
-            // Pastikan value file input benar-benar di-reset
-            document.getElementById('mandiri-kamera').value = ''; 
+            document.getElementById('mandiri-kamera').value = '';
             document.getElementById('mandiri-preview').classList.add('hidden');
+            document.getElementById('mandiri-preview').src = ''; // FIX: also clear stale preview src
             
             base64Img = null; 
             usrLat = null; 
             usrLng = null;
+            gpsValid = false; // FIX: reset GPS validity flag too
             
             document.getElementById('mandiri-gps-status').innerText = 'Belum diizinkan';
             document.getElementById('mandiri-gps-status').className = 'text-sm font-bold text-amber-600';
@@ -575,9 +569,10 @@
                 img.onload = function() {
                     try {
                         const cvs = document.createElement('canvas');
-                        const scale = 600 / img.width;
-                        cvs.width = 600; 
-                        cvs.height = img.height * scale;
+                        // FIX: don't upscale small images past their native size
+                        const scale = Math.min(1, 600 / img.width);
+                        cvs.width = Math.round(img.width * scale); 
+                        cvs.height = Math.round(img.height * scale);
                         cvs.getContext('2d').drawImage(img, 0, 0, cvs.width, cvs.height);
                         base64Img = cvs.toDataURL('image/jpeg', 0.6);
                         document.getElementById('mandiri-preview').src = base64Img;
@@ -599,27 +594,24 @@
 
         function cekLokasiMandiri() {
             const stat = document.getElementById('mandiri-gps-status'); stat.innerText = "Mencari...";
+            gpsValid = false; // FIX: invalidate until a fresh in-range reading comes back
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     pos => {
                         usrLat = pos.coords.latitude; usrLng = pos.coords.longitude;
                         const jrk = Math.round(hitungJarak(SCH_LAT, SCH_LNG, usrLat, usrLng));
-                        if(jrk <= MAX_RADIUS) { 
-                            stat.innerText = `Sesuai Area (${jrk}m)`; 
-                            stat.className="text-sm font-bold text-green-600"; 
+                        if(jrk <= MAX_RADIUS) {
+                            stat.innerText = `Sesuai Area (${jrk}m)`; stat.className="text-sm font-bold text-green-600";
+                            gpsValid = true; // FIX: only mark valid when actually within radius
                         }
-                        else { 
-                            stat.innerText = `Terlalu Jauh (${jrk}m)`; 
-                            stat.className="text-sm font-bold text-red-600"; 
-                            alert("Anda berada di luar radius sekolah!"); 
-                        }
+                        else { stat.innerText = `Terlalu Jauh (${jrk}m)`; stat.className="text-sm font-bold text-red-600"; alert("Anda berada di luar radius sekolah!"); }
                     },
                     err => { 
                         stat.innerText = "GPS Ditolak/Error!"; 
                         stat.className="text-sm font-bold text-red-600"; 
                         alert("Mohon izinkan akses lokasi (GPS) pada browser Anda!"); 
                     },
-                    {enableHighAccuracy: true, timeout: 10000, maximumAge: 0}
+                    {enableHighAccuracy: true}
                 );
             } else alert("Browser tidak mendukung GPS.");
         }
@@ -632,26 +624,39 @@
             const jenisDipilih = document.querySelector('input[name="jenis_absen"]:checked').value;
 
             if(!base64Img) return showToast("Foto bukti kehadiran belum diambil!", false);
-            if(usrLat === null) return showToast("Silakan cek lokasi GPS Anda terlebih dahulu!", false);
+            // FIX: previously only checked usrLat === null, so a student who was "Terlalu Jauh"
+            // could still submit as long as they had clicked "Cek GPS" once. Now blocked
+            // unless the last check actually landed inside the radius.
+            if(!gpsValid) return showToast("Lokasi GPS belum valid. Pastikan Anda berada di area sekolah lalu cek ulang.", false);
 
             toggleLoad(true);
             try {
-                // Gunakan fungsi api() yang sudah diperbaiki agar seragam
-                const resultData = await api('absenMandiri', { 
-                    jenis: jenisDipilih, nis: nis, base64Foto: base64Img, lat: usrLat, lng: usrLng 
-                });
+                const json = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ 
+                        action: 'absenMandiri', 
+                        data: { jenis: jenisDipilih, nis: nis, base64Foto: base64Img, lat: usrLat, lng: usrLng } 
+                    })
+                }).then(r => r.json());
+                
                 toggleLoad(false);
                 
-                if(resultData !== null) {
-                    showToast("Absensi berhasil dikirim!");
+                if(json.success) {
+                    showToast(json.message);
+                    
+                    // Reset semuanya dan kembali ke Step 1
                     document.getElementById('form-absen-mandiri').reset();
                     document.getElementById('mandiri-nama').disabled = true;
                     document.getElementById('mandiri-nama').innerHTML = '<option value="">-- Pilih kelas terlebih dahulu --</option>';
                     kembaliKeStep1();
+                    
+                } else {
+                    showToast(json.message, false);
                 }
             } catch(err) {
                 toggleLoad(false);
-                showToast("Gagal memproses absensi.", false);
+                showToast("Gagal terhubung ke server.", false);
             }
         });
 
@@ -680,11 +685,16 @@
 
         async function initAdminApp() {
             navigate('dashboard');
-            const kelas = await api('getKelas');
-            if(kelas) {
-                const opts = kelas.map(k => `<option value="${k.id_kelas}">${k.nama_kelas}</option>`).join('');
-                document.getElementById('absen-kelas').innerHTML += opts;
-                document.getElementById('lap-kelas').innerHTML += opts;
+            // FIX: guard so re-login (logout -> login again) without a page refresh
+            // doesn't append a second copy of every <option> into the class dropdowns.
+            if(!isKelasOptionsLoaded) {
+                const kelas = await api('getKelas');
+                if(kelas) {
+                    const opts = kelas.map(k => `<option value="${k.id_kelas}">${k.nama_kelas}</option>`).join('');
+                    document.getElementById('absen-kelas').innerHTML += opts;
+                    document.getElementById('lap-kelas').innerHTML += opts;
+                    isKelasOptionsLoaded = true;
+                }
             }
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('absen-tgl').value = today;
@@ -740,6 +750,13 @@
         }
 
         async function saveAbsensi() {
+            // FIX: previously saved silently even if some rows had no status picked,
+            // which could write empty status values to the sheet. Now validated first.
+            const belumDiisi = currentAbsen.filter(s => !s.status);
+            if(belumDiisi.length > 0) {
+                return showToast(`Status ${belumDiisi.length} siswa belum dipilih (mis: ${belumDiisi[0].nama})`, false);
+            }
+
             toggleLoad(true);
             const res = await api('saveAbsensi', { tanggal: document.getElementById('absen-tgl').value, id_kelas: document.getElementById('absen-kelas').value, absensiData: currentAbsen });
             toggleLoad(false);
@@ -749,6 +766,8 @@
         async function loadLaporan() {
             const tgl_mulai = document.getElementById('lap-tgl-mulai').value, tgl_akhir = document.getElementById('lap-tgl-akhir').value, id_kelas = document.getElementById('lap-kelas').value;
             if(!tgl_mulai || !tgl_akhir || !id_kelas) return showToast("Lengkapi semua filter pencarian!", false);
+            // FIX: validate date range order to avoid a nonsensical (empty) query
+            if(tgl_mulai > tgl_akhir) return showToast("Tanggal 'Dari' tidak boleh setelah tanggal 'Sampai'!", false);
             toggleLoad(true); const r = await api('getLaporan', {tgl_mulai, tgl_akhir, id_kelas}); toggleLoad(false);
             if(r) {
                 const namaKelas = document.getElementById('lap-kelas').options[document.getElementById('lap-kelas').selectedIndex].text;
